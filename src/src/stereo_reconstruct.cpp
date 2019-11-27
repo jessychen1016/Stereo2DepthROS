@@ -78,6 +78,20 @@ namespace stereo_reconstruct {
                         boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, _3, _4));
             }
 
+            // if (approx_sync) {
+            //     LAJIMAGE_approx_sync_stereo_ = new message_filters::Synchronizer<LAJIMAGE>(
+            //             LAJIMAGE(10), image_left_, image_right_);
+
+            //     LAJIMAGE_approx_sync_stereo_->registerCallback(
+            //             boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, camera_info_left_, camera_info_right_));
+
+            // } else {
+            //     exact_sync_stereo_ = new message_filters::Synchronizer<MyExactSyncStereoPolicy>(
+            //             MyExactSyncStereoPolicy(10), image_left_, image_right_, camera_info_left_, camera_info_right_);
+            //     exact_sync_stereo_->registerCallback(
+            //             boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, _3, _4));
+            // }
+
             ros::NodeHandle left_nh(nh, "left");
             ros::NodeHandle right_nh(nh, "right");
             ros::NodeHandle left_pnh(pnh, "left");
@@ -105,7 +119,7 @@ namespace stereo_reconstruct {
                             const sensor_msgs::ImageConstPtr &image_right,
                             const sensor_msgs::CameraInfoConstPtr &cam_info_left,
                             const sensor_msgs::CameraInfoConstPtr &cam_info_right) {
-            std::cout<<"FUUUUUUUCK"<<std::endl;
+            
             if (!(image_left->encoding.compare(sensor_msgs::image_encodings::MONO8)  == 0
                || image_left->encoding.compare(sensor_msgs::image_encodings::MONO16) == 0
                || image_left->encoding.compare(sensor_msgs::image_encodings::BGR8)   == 0
@@ -118,24 +132,39 @@ namespace stereo_reconstruct {
                 NODELET_ERROR("Input type must be image=mono8,mono16,rgb8,bgr8 (enc=%s)", image_left->encoding.c_str());
                 return;
             }
-
+            // std::cout << "cloud_pub"<< cloud_pub_.getNumSubscribers()<< std::endl;
+            // std::cout << "depth_pub"<< depth_pub_.getNumSubscribers()<< std::endl;
             if (cloud_pub_.getNumSubscribers() || depth_pub_.getNumSubscribers()) {
-
+                
                 cv_bridge::CvImageConstPtr ptrLeftImage  = cv_bridge::toCvShare(image_left,  "mono8");
                 cv_bridge::CvImageConstPtr ptrRightImage = cv_bridge::toCvShare(image_right, "mono8");
+                
 
                 const cv::Mat &mat_left  = ptrLeftImage->image;
                 const cv::Mat &mat_right = ptrRightImage->image;
 
                 image_geometry::StereoCameraModel stereo_camera_model;
                 stereo_camera_model.fromCameraInfo(*cam_info_left, *cam_info_right);
+                // std::cout << "camInfoLeft    ====    "<< *cam_info_left<<std::endl;
+                // stereo_camera_.camera_model_.baseline = stereo_camera_model.baseline() = 0.05;
+                // stereo_camera_.camera_model_.left.cx  = stereo_camera_model.left().cx();
+                // stereo_camera_.camera_model_.left.cy  = stereo_camera_model.left().cy();
+                // stereo_camera_.camera_model_.left.fx  = stereo_camera_model.left().fx();
+                // stereo_camera_.camera_model_.left.fy  = stereo_camera_model.left().fy();
+                // stereo_camera_.camera_model_.right.cx = stereo_camera_model.right().cx();
+                // stereo_camera_.camera_model_.right.cy = stereo_camera_model.right().cy();
+                // stereo_camera_.camera_model_.right.fx = stereo_camera_model.right().fx();
+                // stereo_camera_.camera_model_.right.fy = stereo_camera_model.right().fy();
+                stereo_camera_.camera_model_.baseline = 0.185;
+                stereo_camera_.camera_model_.left.cx  = 377.77733143404856;
+                stereo_camera_.camera_model_.left.cy  = 273.33279803110605;
+                stereo_camera_.camera_model_.left.fx  = 577.7599422834412;
+                stereo_camera_.camera_model_.left.fy  = 576.4409819801004;
+                stereo_camera_.camera_model_.right.cx = 370.4700065798576;
+                stereo_camera_.camera_model_.right.cy = 272.15617834392657;
+                stereo_camera_.camera_model_.right.fx = 596.3538688978191;
+                stereo_camera_.camera_model_.right.fy = 597.5464430438726;
 
-                stereo_camera_.camera_model_.baseline = stereo_camera_model.baseline();
-                stereo_camera_.camera_model_.left.cx  = stereo_camera_model.left().cx();
-                stereo_camera_.camera_model_.left.cy  = stereo_camera_model.left().cy();
-                stereo_camera_.camera_model_.left.fx  = stereo_camera_model.left().fx();
-                stereo_camera_.camera_model_.right.cx = stereo_camera_model.right().cx();
-                stereo_camera_.camera_model_.right.fx = stereo_camera_model.right().fx();
 
                 cv::Mat mat_disp;
                 stereo_camera_.compute_disparity_map(mat_left, mat_right, mat_disp);
@@ -215,6 +244,8 @@ namespace stereo_reconstruct {
 
         typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> MyApproxSyncStereoPolicy;
         message_filters::Synchronizer<MyApproxSyncStereoPolicy> *approx_sync_stereo_;
+        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> LAJIMAGE;
+        message_filters::Synchronizer<LAJIMAGE> *LAJIMAGE_approx_sync_stereo_;
 
         typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> MyExactSyncStereoPolicy;
         message_filters::Synchronizer<MyExactSyncStereoPolicy> *exact_sync_stereo_;
