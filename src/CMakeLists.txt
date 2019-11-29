@@ -41,9 +41,23 @@ catkin_package(
 #  DEPENDS system_lib
 )
 include_directories(stereo_camera ${catkin_INCLUDE_DIRS}
-                                  ${CMAKE_CURRENT_LIST_DIR}/include/elas)
+                                  ${CMAKE_CURRENT_LIST_DIR}/include/elas
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/descriptor.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/elas.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/filter.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/image.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/matrix.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/timer.h
+                                  # ${CMAKE_CURRENT_LIST_DIR}/include/elas/triangle.h
+                                  )
 message(${CMAKE_CURRENT_LIST_DIR})
-add_library(${PROJECT_NAME} src/stereo_reconstruct.cpp)
+add_library(${PROJECT_NAME} src/stereo_reconstruct.cpp
+                            ./include/elas/elas.cpp
+                            ./include/elas/matrix.cpp
+                            ./include/elas/descriptor.cpp
+                            ./include/elas/triangle.cpp
+                            ./include/elas/filter.cpp)
+
 add_executable(cam_info_generator src/send_camera_info.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} stereo_camera)
 target_link_libraries(cam_info_generator ${catkin_LIBRARIES} stereo_camera ${PROJECT_NAME})

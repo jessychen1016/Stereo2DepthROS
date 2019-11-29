@@ -40,12 +40,12 @@ namespace cg {
         distortionCoefficients_left << -0.07510631419563545, 0.09363042700964139, 0.008738068640747354, 0.001945801963267056;
         distortionCoefficients_right<< -0.058433024732107014, 0.07946394064467827, 0.006107121258570722, -0.003165480863601939;
         //rotations from cam0 to cam1
-        Rotation_of_Cameras << 0.999864157909764,	-0.0104650303017615,	-0.0127337688130031,
-                               0.0104185566980035,	0.999938841003867,	-0.00371051589070608,
-                               0.0127718206897168,	0.00357734435411343,	0.999912037733142;
+        Rotation_of_Cameras << 0.999864157909763, 0.0104185566980036, 0.0127718206897169,
+                              -0.0104650303017613, 0.999938841003866, 0.00357734435411407,
+                              -0.0127337688130030, -0.00371051589070542, 0.999912037733140;
         //translation from cam0 to cam1
-        Translation_of_Cameras << 0.150310336108243, -0.00391291612755978, -0.0482688815950372 ;
-        cout<<"Size == "<< mat_l.size()<<endl;
+        Translation_of_Cameras << -0.149632669198847, 0.00565835345063155, 0.0501641338875302 ;
+        // cout<<"Size == "<< mat_l.size()<<endl;
         // Size2i imageSIZE = Size2i(720,540);
         // cout<<"SSSSSSSSSSSSSSSSSSSSSIZE = "<<imageSIZE<<endl;
         // cout<<"Rotation_of_Cameras = "<<Rotation_of_Cameras<<endl;
@@ -174,14 +174,34 @@ namespace cg {
             Mat leftdpf = Mat::zeros(imsize, CV_32F);
             Mat rightdpf = Mat::zeros(imsize, CV_32F);
             Elas::parameters param;
-            param.postprocess_only_left = true;
+            param.disp_min              = 0;
+     	    param.disp_max              = 255;
+     	    param.support_threshold     = 0.85;
+     	    param.support_texture       = 10;
+     	    param.candidate_stepsize    = 5;
+     	    param.incon_window_size     = 5;
+     	    param.incon_threshold       = 5;
+     	    param.incon_min_support     = 5;
+     	    param.add_corners           = 0;
+     	    param.grid_size             = 20;
+     	    param.beta                  = 0.02;
+     	    param.gamma                 = 3;
+     	    param.sigma                 = 1;
+     	    param.sradius               = 2;
+     	    param.match_texture         = 1;
+     	    param.lr_threshold          = 2;
+     	    param.speckle_sim_threshold = 1;
+     	    param.speckle_size          = 200;
+     	    param.ipol_gap_width        = 3;
+     	    param.filter_median         = 0;
+     	    param.filter_adaptive_mean  = 1;
+     	    param.postprocess_only_left = 1;
+     	    param.subsampling           = 0;
+            param.postprocess_only_left = false;
             Elas elas(param);
-            cout<<"FUCK555555555555555555"<<endl;
             elas.process(mat_l.data, mat_r.data, leftdpf.ptr<float>(0), rightdpf.ptr<float>(0), dims);
-            cout<<"FUCK444444444444444444"<<endl;
             mat_disp = Mat(out_img_size, CV_8UC1, Scalar(0));
             leftdpf.convertTo(mat_disp, CV_32FC1, 1 / 16.f);
-            cout<<"FUCK222222222222222222222"<<endl;
         }
     }
 

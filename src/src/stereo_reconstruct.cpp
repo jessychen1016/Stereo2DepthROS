@@ -162,7 +162,7 @@ namespace stereo_reconstruct {
                 const cv::Mat &Rect_mat_r = ptrRightImage->image;
                 
                 stereo_camera_.stereo_rectify(mat_left, mat_right,  Rect_mat_l, Rect_mat_r);
-                stereo_camera_.compute_disparity_map(Rect_mat_l, Rect_mat_r, mat_disp, false, false);
+                stereo_camera_.compute_disparity_map(Rect_mat_l, Rect_mat_r, mat_disp, true, false);
 
                 if (depth_frame_ == nullptr)
                     depth_frame_ = new cv::Mat(mat_disp.size(), is_mm_ ? CV_16UC1 : CV_32FC1);
@@ -177,9 +177,9 @@ namespace stereo_reconstruct {
                     cv::imshow("depth colormap", colormap);
                     cv::waitKey(3);
                 }
-                // // display disparity map
-                // cv::imshow("disparity", mat_disp);
-                // cv::waitKey(3);
+                // display disparity map
+                cv::imshow("disparity", mat_disp);
+                cv::waitKey(3);
                 publish_depth(*depth_frame_, cam_info_left, image_left->header.stamp);
                 publish_Rect_left(Rect_mat_l, cam_info_left, image_left->header.stamp);
                 publish_Rect_right(Rect_mat_r, cam_info_left, image_left->header.stamp);
