@@ -164,10 +164,15 @@ namespace stereo_reconstruct {
                 stereo_camera_.stereo_rectify(mat_left, mat_right,  Rect_mat_l, Rect_mat_r);
                 stereo_camera_.compute_disparity_map(Rect_mat_l, Rect_mat_r, mat_disp, true, false);
 
-                if (depth_frame_ == nullptr)
-                    depth_frame_ = new cv::Mat(mat_disp.size(), is_mm_ ? CV_16UC1 : CV_32FC1);
-                stereo_camera_.disparity_to_depth_map(mat_disp, *depth_frame_);
+                // if (depth_frame_ == nullptr)
+                //     depth_frame_ = new cv::Mat(mat_disp.size(), is_mm_ ? CV_16UC1 : CV_32FC1);
+                // stereo_camera_.disparity_to_depth_map(mat_disp, *depth_frame_);
 
+                if (depth_frame_ == nullptr)
+                    depth_frame_ = new cv::Mat(mat_disp.size(), is_mm_ ? CV_8UC1 : CV_8UC1);                
+                cv::reprojectImageTo3D(mat_disp, *depth_frame_, stereo_camera_.Q);
+                cv::imshow("depth", *depth_frame_);
+                cv::moveWindow("depth", 600,300);
                 stereo_camera_.depth_to_pointcloud(*depth_frame_, mat_left, *pcl_cloud_);
 
                 if(is_use_colormap_)

@@ -69,7 +69,7 @@ namespace cg {
         int32_t my_sigma_int=100;
         float   my_sradius=2;                // prior sigma radius
         int32_t my_sradius_int=200;
-        int32_t my_match_texture=1;          // min texture for dense matching
+        int32_t my_match_texture=35;          // min texture for dense matching
         int32_t my_lr_threshold=2;           // disparity threshold for left/right consistency check
         float   my_speckle_sim_threshold=1;  // similarity threshold for speckle segmentation
         int32_t my_speckle_sim_threshold_int=100;

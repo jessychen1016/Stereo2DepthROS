@@ -3,7 +3,7 @@
 <launch>
     <arg name="camera"    default="stereo"/>
     <arg name="rviz"      default="false"/>
-    <arg name="mm"        default="false"/>
+    <arg name="mm"        default="true"/>
     <arg name="colormap"  default="false"/>
     <arg name="left"      default="left" />
     <arg name="right"     default="right"/>

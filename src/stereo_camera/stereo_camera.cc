@@ -201,8 +201,9 @@ namespace cg {
              
             Elas elas(param);
             elas.process(mat_l.data, mat_r.data, leftdpf.ptr<float>(0), rightdpf.ptr<float>(0), dims);
-            mat_disp = Mat(out_img_size, CV_8UC1, Scalar(0));
-            leftdpf.convertTo(mat_disp, CV_32FC1, 1 / 16.f);
+            // mat_disp = Mat(out_img_size, CV_8UC1, Scalar(0));
+            leftdpf.convertTo(mat_disp, CV_8U, 255/(my_disp_max-my_disp_min));
+            normalize(mat_disp, mat_disp, 0, 255, CV_MINMAX, CV_8UC1);
         }
     }
 
@@ -366,7 +367,7 @@ namespace cg {
         cvCreateTrackbar("speckle_size", "Parameter Tuning", &my_speckle_size, 10000 );
         cvCreateTrackbar("ipol_gap_width", "Parameter Tuning", &my_ipol_gap_width, 1000 );
         cvCreateTrackbar("BOOL_filter_median_int", "Parameter Tuning", &my_filter_median_int, 1 );
-        cvCreateTrackbar("BOOL_filter_adaptive_mean_int", "Parameter Tuning", &my_filter_adaptive_mean_int, 1 );
+        cvCreateTrackbar("BOOL_filter_adaptive_mean_int", "Parameter Tuning", &my_filter_adaptive_mean_int, 1 ); // Set it to zero, it will looks better
         cvCreateTrackbar("BOOL_postprocess_only_left_int", "Parameter Tuning", &my_postprocess_only_left_int, 1 );
         cvCreateTrackbar("BOOL_subsampling_int", "Parameter Tuning", &my_subsampling_int, 1 );
     }
