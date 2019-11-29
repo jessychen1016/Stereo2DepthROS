@@ -174,30 +174,31 @@ namespace cg {
             Mat leftdpf = Mat::zeros(imsize, CV_32F);
             Mat rightdpf = Mat::zeros(imsize, CV_32F);
             Elas::parameters param;
-            param.disp_min              = 0;
-     	    param.disp_max              = 255;
-     	    param.support_threshold     = 0.85;
-     	    param.support_texture       = 10;
-     	    param.candidate_stepsize    = 5;
-     	    param.incon_window_size     = 5;
-     	    param.incon_threshold       = 5;
-     	    param.incon_min_support     = 5;
-     	    param.add_corners           = 0;
-     	    param.grid_size             = 20;
-     	    param.beta                  = 0.02;
-     	    param.gamma                 = 3;
-     	    param.sigma                 = 1;
-     	    param.sradius               = 2;
-     	    param.match_texture         = 1;
-     	    param.lr_threshold          = 2;
-     	    param.speckle_sim_threshold = 1;
-     	    param.speckle_size          = 200;
-     	    param.ipol_gap_width        = 3;
-     	    param.filter_median         = 0;
-     	    param.filter_adaptive_mean  = 1;
-     	    param.postprocess_only_left = 1;
-     	    param.subsampling           = 0;
-            param.postprocess_only_left = false;
+            StereoCamera::Tune_Parameters();
+            param.disp_min                   =     my_disp_min                              ;      
+     	    param.disp_max                   =     my_disp_max                              ;      
+     	    param.support_threshold          =     my_support_threshold_int/100             ;      
+     	    param.support_texture            =     my_support_texture                       ;     
+     	    param.candidate_stepsize         =     my_candidate_stepsize                    ;      
+     	    param.incon_window_size          =     my_incon_window_size                     ;      
+     	    param.incon_threshold            =     my_incon_threshold                       ;      
+     	    param.incon_min_support          =     my_incon_min_support                     ;      
+     	    param.add_corners                =     bool(my_add_corners_int)                 ;      
+     	    param.grid_size                  =     my_grid_size                             ;      
+     	    param.beta                       =     my_beta_int/100                          ;      
+     	    param.gamma                      =     my_gamma_int/100                         ;      
+     	    param.sigma                      =     my_sigma_int/100                         ;      
+     	    param.sradius                    =     my_sradius_int/100                       ;      
+     	    param.match_texture              =     my_match_texture                         ;      
+     	    param.lr_threshold               =     my_lr_threshold                          ;      
+     	    param.speckle_sim_threshold      =     my_speckle_sim_threshold_int/100         ;      
+     	    param.speckle_size               =     my_speckle_size                          ;      
+     	    param.ipol_gap_width             =     my_ipol_gap_width                        ;
+     	    param.filter_median              =     bool(my_filter_median_int)               ;      
+     	    param.filter_adaptive_mean       =     bool(my_filter_adaptive_mean_int)        ;  
+     	    param.postprocess_only_left      =     bool(my_postprocess_only_left_int)       ;  
+     	    param.subsampling                =     bool(my_subsampling_int)                 ;
+             
             Elas elas(param);
             elas.process(mat_l.data, mat_r.data, leftdpf.ptr<float>(0), rightdpf.ptr<float>(0), dims);
             mat_disp = Mat(out_img_size, CV_8UC1, Scalar(0));
@@ -341,6 +342,34 @@ namespace cg {
         cv::applyColorMap(mat_scaled, color_map, int(colortype));
     }
 
+    void StereoCamera::Tune_Parameters(){
+
+        namedWindow("Parameter Tuning", CV_WINDOW_AUTOSIZE);
+        moveWindow("Parameter Tuning", 0,400);
+        cvCreateTrackbar("min disparity", "Parameter Tuning", &my_disp_min, 10000 );
+        cvCreateTrackbar("disp_max", "Parameter Tuning", &my_disp_max, 10000 );
+        cvCreateTrackbar("FLOAT_support_threshold", "Parameter Tuning", &my_support_threshold_int, 100 );
+        cvCreateTrackbar("support_texture", "Parameter Tuning", &my_support_texture, 10000 );
+        cvCreateTrackbar("candidate_stepsize", "Parameter Tuning", &my_candidate_stepsize, 10000 ); //Dont set it to zero, it will kabooom!!
+        cvCreateTrackbar("incon_window_size", "Parameter Tuning", &my_incon_window_size, 10000 ); // Set it to zero and it will process faster
+        cvCreateTrackbar("incon_threshold", "Parameter Tuning", &my_incon_threshold, 10000 );
+        cvCreateTrackbar("incon_min_support", "Parameter Tuning", &my_incon_min_support, 10000 );
+        cvCreateTrackbar("BOOL_add_corners", "Parameter Tuning", &my_add_corners_int, 1 );
+        cvCreateTrackbar("grid_size", "Parameter Tuning", &my_grid_size, 200 ); // Dont mess around with this one, it will KaBoooom!!!!
+        cvCreateTrackbar("FLOAT_beta_int", "Parameter Tuning", &my_beta_int, 100 );
+        cvCreateTrackbar("FLOAT_gamma_int", "Parameter Tuning", &my_gamma_int, 100 );
+        cvCreateTrackbar("FLOAT_sigma_int", "Parameter Tuning", &my_sigma_int, 100 );
+        cvCreateTrackbar("FLOAT_sradius_int", "Parameter Tuning", &my_sradius_int, 100 );
+        cvCreateTrackbar("match_texture", "Parameter Tuning", &my_match_texture, 10000 );
+        cvCreateTrackbar("lr_threshold", "Parameter Tuning", &my_lr_threshold, 10000 );
+        cvCreateTrackbar("FLOAT_speckle_sim_threshold_int", "Parameter Tuning", &my_speckle_sim_threshold_int, 100 );
+        cvCreateTrackbar("speckle_size", "Parameter Tuning", &my_speckle_size, 10000 );
+        cvCreateTrackbar("ipol_gap_width", "Parameter Tuning", &my_ipol_gap_width, 1000 );
+        cvCreateTrackbar("BOOL_filter_median_int", "Parameter Tuning", &my_filter_median_int, 1 );
+        cvCreateTrackbar("BOOL_filter_adaptive_mean_int", "Parameter Tuning", &my_filter_adaptive_mean_int, 1 );
+        cvCreateTrackbar("BOOL_postprocess_only_left_int", "Parameter Tuning", &my_postprocess_only_left_int, 1 );
+        cvCreateTrackbar("BOOL_subsampling_int", "Parameter Tuning", &my_subsampling_int, 1 );
+    }
 
     
 

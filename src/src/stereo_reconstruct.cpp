@@ -179,6 +179,7 @@ namespace stereo_reconstruct {
                 }
                 // display disparity map
                 cv::imshow("disparity", mat_disp);
+                cv::moveWindow("disparity", 600,300);
                 cv::waitKey(3);
                 publish_depth(*depth_frame_, cam_info_left, image_left->header.stamp);
                 publish_Rect_left(Rect_mat_l, cam_info_left, image_left->header.stamp);
