@@ -10,6 +10,7 @@
 
 #include "camera.h"
 
+
 namespace cg {
 
     class StereoCamera {
@@ -21,7 +22,7 @@ namespace cg {
       };
 
     public:
-        void compute_disparity_map(const cv::Mat &mat_l, const cv::Mat &mat_r, cv::Mat &mat_disp);
+        void compute_disparity_map(const cv::Mat &mat_l, const cv::Mat &mat_r, cv::Mat &mat_disp, bool ELAS, bool SGBM);
 
         void disparity_to_depth_map(const cv::Mat &mat_disp, cv::Mat &mat_depth);
 
@@ -34,9 +35,19 @@ namespace cg {
         /// pseudocolor / false color a grayscale image using OpenCV’s predefined colormaps
         static void get_colormap_ocv(const cv::Mat &mat_in, cv::Mat &color_map,
                                      cv::ColormapTypes colortype=cv::COLORMAP_JET);
+        void stereo_rectify(const cv::Mat &mat_l, const cv::Mat &mat_r, const cv::Mat &Rect_mat_l, const cv::Mat &Rect_mat_r);
 
     public:
         StereoCameraModel camera_model_;
+        cv::Mat_<double> cameraMatrix_left = cv::Mat(3, 3, CV_64FC1);
+        cv::Mat_<double> cameraMatrix_right = cv::Mat(3, 3, CV_64FC1);
+        cv::Mat_<double> distortionCoefficients_left = cv::Mat(1, 4, CV_64FC1);
+        cv::Mat_<double> distortionCoefficients_right = cv::Mat(1, 4, CV_64FC1);
+        cv::Mat_<double> Rotation_of_Cameras = cv::Mat(3, 3, CV_64FC1);
+        cv::Mat_<double> Translation_of_Cameras = cv::Mat(3, 1, CV_64FC1);
+        cv::Mat R1, R2, P1, P2, Q;
+
+        
     };
 };
 

@@ -21,7 +21,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include "stereo_camera.h"
-
+using namespace std;
 namespace stereo_reconstruct {
 
     class StereoReconstruct : public nodelet::Nodelet {
@@ -78,20 +78,6 @@ namespace stereo_reconstruct {
                         boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, _3, _4));
             }
 
-            // if (approx_sync) {
-            //     LAJIMAGE_approx_sync_stereo_ = new message_filters::Synchronizer<LAJIMAGE>(
-            //             LAJIMAGE(10), image_left_, image_right_);
-
-            //     LAJIMAGE_approx_sync_stereo_->registerCallback(
-            //             boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, camera_info_left_, camera_info_right_));
-
-            // } else {
-            //     exact_sync_stereo_ = new message_filters::Synchronizer<MyExactSyncStereoPolicy>(
-            //             MyExactSyncStereoPolicy(10), image_left_, image_right_, camera_info_left_, camera_info_right_);
-            //     exact_sync_stereo_->registerCallback(
-            //             boost::bind(&StereoReconstruct::stereo_callback, this, _1, _2, _3, _4));
-            // }
-
             ros::NodeHandle left_nh(nh, "left");
             ros::NodeHandle right_nh(nh, "right");
             ros::NodeHandle left_pnh(pnh, "left");
@@ -112,7 +98,13 @@ namespace stereo_reconstruct {
             cloud_pub_ = nh.advertise<sensor_msgs::PointCloud2>("cloud", 1);
 
             image_transport::ImageTransport depth_it(nh);
+            image_transport::ImageTransport RectLeft_it(nh);
+            image_transport::ImageTransport RectRight_it(nh);
+            image_transport::ImageTransport Disparity_it(nh);
             depth_pub_ = depth_it.advertiseCamera("depth", 1, false);
+            Rect_Left_ = RectLeft_it.advertiseCamera("RectLeft", 1, false);
+            Rect_Right_ = RectRight_it.advertiseCamera("RectRight", 1, false);
+            disparity_pub_ = Disparity_it.advertiseCamera("Disparity", 1, false);
         }
 
         void stereo_callback(const sensor_msgs::ImageConstPtr &image_left,
@@ -132,9 +124,8 @@ namespace stereo_reconstruct {
                 NODELET_ERROR("Input type must be image=mono8,mono16,rgb8,bgr8 (enc=%s)", image_left->encoding.c_str());
                 return;
             }
-            // std::cout << "cloud_pub"<< cloud_pub_.getNumSubscribers()<< std::endl;
-            // std::cout << "depth_pub"<< depth_pub_.getNumSubscribers()<< std::endl;
-            if (cloud_pub_.getNumSubscribers() || depth_pub_.getNumSubscribers()) {
+
+            if (cloud_pub_.getNumSubscribers() || depth_pub_.getNumSubscribers() || Rect_Left_.getNumSubscribers() || Rect_Right_.getNumSubscribers()) {
                 
                 cv_bridge::CvImageConstPtr ptrLeftImage  = cv_bridge::toCvShare(image_left,  "mono8");
                 cv_bridge::CvImageConstPtr ptrRightImage = cv_bridge::toCvShare(image_right, "mono8");
@@ -155,7 +146,7 @@ namespace stereo_reconstruct {
                 // stereo_camera_.camera_model_.right.cy = stereo_camera_model.right().cy();
                 // stereo_camera_.camera_model_.right.fx = stereo_camera_model.right().fx();
                 // stereo_camera_.camera_model_.right.fy = stereo_camera_model.right().fy();
-                stereo_camera_.camera_model_.baseline = 0.185;
+                stereo_camera_.camera_model_.baseline = 154;
                 stereo_camera_.camera_model_.left.cx  = 377.77733143404856;
                 stereo_camera_.camera_model_.left.cy  = 273.33279803110605;
                 stereo_camera_.camera_model_.left.fx  = 577.7599422834412;
@@ -167,7 +158,11 @@ namespace stereo_reconstruct {
 
 
                 cv::Mat mat_disp;
-                stereo_camera_.compute_disparity_map(mat_left, mat_right, mat_disp);
+                const cv::Mat &Rect_mat_l = ptrLeftImage->image;
+                const cv::Mat &Rect_mat_r = ptrRightImage->image;
+                
+                stereo_camera_.stereo_rectify(mat_left, mat_right,  Rect_mat_l, Rect_mat_r);
+                stereo_camera_.compute_disparity_map(Rect_mat_l, Rect_mat_r, mat_disp, false, false);
 
                 if (depth_frame_ == nullptr)
                     depth_frame_ = new cv::Mat(mat_disp.size(), is_mm_ ? CV_16UC1 : CV_32FC1);
@@ -182,11 +177,73 @@ namespace stereo_reconstruct {
                     cv::imshow("depth colormap", colormap);
                     cv::waitKey(3);
                 }
-
+                // // display disparity map
+                // cv::imshow("disparity", mat_disp);
+                // cv::waitKey(3);
                 publish_depth(*depth_frame_, cam_info_left, image_left->header.stamp);
-
+                publish_Rect_left(Rect_mat_l, cam_info_left, image_left->header.stamp);
+                publish_Rect_right(Rect_mat_r, cam_info_left, image_left->header.stamp);
+                publish_disparity(mat_disp, cam_info_left, image_left->header.stamp);
                 publish_cloud(pcl_cloud_, image_left->header.stamp);
             }
+        }
+
+
+        void publish_Rect_left(
+                const cv::Mat &depth,
+                const sensor_msgs::CameraInfoConstPtr &cam_info,
+                ros::Time time_stamp) {
+
+
+            sensor_msgs::Image depth_msg;
+            std_msgs::Header depth_header;
+            depth_header.frame_id = frame_id_depth_;
+            depth_header.stamp    = ros::Time::now();
+            cv_bridge::CvImage(depth_header, "mono8", depth).toImageMsg(depth_msg);
+
+            sensor_msgs::CameraInfo depth_info;
+            depth_info = *cam_info;
+            depth_info.header = depth_msg.header;
+
+            Rect_Left_.publish(depth_msg, depth_info, time_stamp);
+        }
+        
+
+
+        void publish_Rect_right(
+                const cv::Mat &depth,
+                const sensor_msgs::CameraInfoConstPtr &cam_info,
+                ros::Time time_stamp) {
+
+            sensor_msgs::Image depth_msg;
+            std_msgs::Header depth_header;
+            depth_header.frame_id = frame_id_depth_;
+            depth_header.stamp    = ros::Time::now();
+            cv_bridge::CvImage(depth_header, "mono8", depth).toImageMsg(depth_msg);
+
+            sensor_msgs::CameraInfo depth_info;
+            depth_info = *cam_info;
+            depth_info.header = depth_msg.header;
+
+            Rect_Right_.publish(depth_msg, depth_info, time_stamp);
+        }
+        void publish_disparity(
+                cv::Mat depth,
+                const sensor_msgs::CameraInfoConstPtr &cam_info,
+                ros::Time time_stamp) {
+
+
+            sensor_msgs::Image depth_msg;
+            std_msgs::Header depth_header;
+            depth_header.frame_id = frame_id_depth_;
+            depth_header.stamp    = ros::Time::now();
+            cv_bridge::CvImage(depth_header, "mono8", depth).toImageMsg(depth_msg);
+
+            sensor_msgs::CameraInfo depth_info;
+            depth_info = *cam_info;
+            depth_info.header = depth_msg.header;
+
+            disparity_pub_.publish(depth_msg, depth_info, time_stamp);
         }
 
         void publish_depth(
@@ -236,6 +293,9 @@ namespace stereo_reconstruct {
 
         ros::Publisher cloud_pub_;
         image_transport::CameraPublisher depth_pub_;
+        image_transport::CameraPublisher Rect_Left_;
+        image_transport::CameraPublisher Rect_Right_;
+        image_transport::CameraPublisher disparity_pub_;
 
         image_transport::SubscriberFilter image_left_;
         image_transport::SubscriberFilter image_right_;
@@ -244,8 +304,6 @@ namespace stereo_reconstruct {
 
         typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> MyApproxSyncStereoPolicy;
         message_filters::Synchronizer<MyApproxSyncStereoPolicy> *approx_sync_stereo_;
-        typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> LAJIMAGE;
-        message_filters::Synchronizer<LAJIMAGE> *LAJIMAGE_approx_sync_stereo_;
 
         typedef message_filters::sync_policies::ExactTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo, sensor_msgs::CameraInfo> MyExactSyncStereoPolicy;
         message_filters::Synchronizer<MyExactSyncStereoPolicy> *exact_sync_stereo_;

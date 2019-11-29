@@ -40,9 +40,9 @@ catkin_package(
   CATKIN_DEPENDS cv_bridge dynamic_reconfigure geometry_msgs image_geometry image_transport message_filters nodelet pcl_conversions pcl_ros roscpp rospy sensor_msgs std_msgs std_srvs tf tf2_ros tf_conversions
 #  DEPENDS system_lib
 )
-
-include_directories(stereo_camera ${catkin_INCLUDE_DIRS})
-
+include_directories(stereo_camera ${catkin_INCLUDE_DIRS}
+                                  ${CMAKE_CURRENT_LIST_DIR}/include/elas)
+message(${CMAKE_CURRENT_LIST_DIR})
 add_library(${PROJECT_NAME} src/stereo_reconstruct.cpp)
 add_executable(cam_info_generator src/send_camera_info.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} stereo_camera)
