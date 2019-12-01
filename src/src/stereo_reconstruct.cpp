@@ -50,7 +50,7 @@ namespace stereo_reconstruct {
             ros::NodeHandle &nh  = getNodeHandle();
             ros::NodeHandle &pnh = getPrivateNodeHandle();
 
-            bool approx_sync = true;
+            bool approx_sync = false;
 
             pnh.param("approx_sync", approx_sync, approx_sync);
             pnh.param("is_mm", is_mm_, is_mm_);
